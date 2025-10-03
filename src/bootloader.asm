@@ -30,8 +30,85 @@ ebr_volume_label: db 'ThoriumOS  ' ; padded to 11 bytes
 ebr_system_id: db 'Fat12   ' ; padded to 8 bytes
 
 start:
-   jmp main
+   ; setup data segments
+   mov ax, 0
+   mov ds, ax
+   mov es, ax
 
+   ; setup stack
+   mov ss, ax
+   mov sp, 07C00h
+
+   push es
+   push word .after
+   retf
+
+.after
+   mov [ebr_drive_number], dl ; get drive number from dl
+
+   mov si, msg_loading
+   puts
+
+   push es
+   mov ah, 08h
+   int 013h
+   jc floppy_error
+   pop es
+
+   and cl, 03Fh ; remove top two bits
+   xor ch, ch
+   mov [bdb_sectors_per_track], cx
+
+   inc dh
+   mov [bdb_heads], dh
+
+
+   ; compute root dir lba: reserved sectors + num fats * sectors per fat
+   mov ax, [bdb_sectors_per_fat]
+   mov bl, [bdb_fat_count]
+   xor bh, bh
+   mul bx ; multiply with ax
+   add ax [bdb_reserved_sectors]
+   push ax
+
+   ; compute root dir size: (32 * num entries) / bytes per sector
+   mov ax, [bdb_dir_entry_count]
+   shl ax, 5
+   xor dx, dx
+   div word [bdb_bytes_per_sector] ; remainder in dx , result in ax
+
+   test dx, dx
+   jz .root_dir_read ; if dx == 0 , read root dir
+   inc ax ; if dx != 0 add 1 to result
+
+.root_dir_read:
+   ; read root dir
+   mov cl, al ; root dir size , number of sectors to read
+   pop ax ; lba of root dir
+   mov dl, [ebr_drive_number]
+   mov bx, buffer
+   call read_disk
+
+   xor bx, bx
+   mov di, buffer
+
+.search_kernel
+   mov si, kernel_file
+   mov cx, 0Bh ; compare 11 chars
+   push di
+   repe cmpsb
+   pop di
+   je .kernel_found
+
+   add di, 32 ; go to next
+   inc bx
+   cmp bx, [bdb_dir_entry_count]
+   jl .search_kernel ; check if still in root dir
+
+   jmp kernel_not_found_error ; if not in root dir anymore throw error
+
+.kernel_found:
+   ; nothing for now
 
 ; si points to string
 puts:
@@ -54,41 +131,21 @@ puts:
    pop si
    ret
 
-main:
-   ; setup data segments
-   mov ax, 0
-   mov ds, ax
-   mov es, ax
-
-   ; setup stack
-   mov ss, ax
-   mov sp, 07C00h
-
-   ; read something from disk
-   ; BIOS should put drive number into DL
-   mov [ebr_drive_number], dl
-   mov ax, 1 ; second disk sector , 0-index
-   mov cl, 1 ; 1 sector to read
-   mov bx, 07E00h ; 7C00h + 200h = 7E00h
-   call read_disk
-
-
-   ; print message
-   mov si, msg_hello_world
-   call puts
-   
-   cli
-   hlt
 
 floppy_error:
    mov si, msg_disk_read_error
    call puts
    jmp wait_and_reboot
 
+kernel_not_found_error:
+   mov si, msg_kernel_not_found
+   call puts
+   jmp wait_and_reboot
+
 wait_and_reboot:
    mov ah, 0
    int 16h ; wait for keypress
-   jmp 0FFFFh ; jumps to beginiing of bios reboots
+   jmp 0FFFFh ; jumps to beginiing of bios ; reboots
 
    hlt
 
@@ -190,8 +247,16 @@ disk_reset:
    ret
 
 
-msg_hello_world: db "HELLO WORLD", 0x0D, 0x0A, 0
-msg_disk_read_error: db "Read from Disk failed!", 0x0D, 0x0A, 0
+msg_loading: db "Loading...", 0Dh, 0Ah, 0
+msg_disk_read_error: db "ERROR: Read from Disk failed!", 0Dh, 0Ah, 0
+msg_kernel_not_found: db "ERROR: Kernel not found!", 0Dh, 0Ah, 0
+kernel_file: db 'KERNEL  BIN'
+kernel_cluster: dw 0
+
+KERNEL_SEGMENT equ 2000h
+KERNEL_OFFSET equ 0
 
 times 510-($-$$) db 0
 dw 0AA55h
+
+buffer:
