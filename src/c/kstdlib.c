@@ -1,52 +1,61 @@
 #include "kstdlib.h"
 
-void putc(char c, char color){
-   static char* video = (char*)0xB8000;
-   static int offset = 0;
-   video[offset++] = c;
-   video[offset++] = color;
+void putc(char c, char color) {
+    static char* video = (char*)0xB8000;
+    static int offset = 0;
+    video[offset++] = c;
+    video[offset++] = color;
 }
 
-void puts(const char* str){
-   while(*str) putc(*str++, 0x07);
+void puts(const char* str) {
+    while (*str) {
+        putc(*str++, 0x07);
+    }
 }
 
-void int_to_string(int num, char* buf){
-   int negative = 0;
-   char* p = buf;
+void int_to_string(int num, char* buf) {
+    int negative = 0;
+    char* p = buf;
+    char* start;
+    char* end;
+    char temp;
+    int digit;
 
-   if (num == 0){
-      *p++ = '0';
-      *p = '\0';
-      return;
-   }
+    if (num == 0) {
+        *p++ = '0';
+        *p = '\0';
+        return;
+    }
 
-   if (num < 0){
-      negative = 1;
-      num = -num;
-      }
-   
-   while (num > 0){
-      int digit = num % 10;
-      *p++ = '0' + digit;
-      num /= 10;
-   }
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
 
-   if (negative){*p++ = '-';}
+    while (num > 0) {
+        digit = num % 10;
+        *p++ = '0' + digit;
+        num /= 10;
+    }
 
-   *p = '\0';
+    if (negative) {
+        *p++ = '-';
+    }
 
-   char* start = buf;
-   char* end = p - 1;
-   while (start < end){
-      char temp = *start;
-      *start++ = *end;
-      *end-- = temp;
-   }
+    *p = '\0';
+
+    start = buf;
+    end = p - 1;
+
+    while (start < end) {
+        temp = *start;
+        *start++ = *end;
+        *end-- = temp;
+    }
 }
 
-void putn(int num){
-   char buf[12];
-   int_to_string(num, buf);
-   puts(buf);
+void putn(int num) {
+    char buf[12];
+    int_to_string(num, buf);
+    puts(buf);
 }
