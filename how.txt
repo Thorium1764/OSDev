@@ -1,0 +1,5 @@
+compile using: /opt/watcom/binl/wcc -2 -w -ml -fo=build/kernel.obj src/c/kernel.c
+assemble with: nasm -f obj -o file1.obj file1.asm 
+link with: /opt/watcom/binl/wlink NAME build/stage2.bin FILE { build/stage2/asm/file1.obj build/stage2/asm/file2.obj build/stage2/c/file1.obj build/stage2/c/file2.obj }
+
+

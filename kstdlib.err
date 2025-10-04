@@ -1,0 +1,12 @@
+src/c/kstdlib.c(39): Error! E1077: Missing '}'
+src/c/kstdlib.c(39): Error! E1011: Symbol 'buf' has not been declared
+src/c/kstdlib.c(39): Warning! W102: Type mismatch (warning)
+src/c/kstdlib.c(39): Note! I2003: source conversion type is 'int'
+src/c/kstdlib.c(39): Note! I2004: target conversion type is 'char *'
+src/c/kstdlib.c(39): Error! E1054: Expression must be constant
+src/c/kstdlib.c(40): Error! E1011: Symbol 'p' has not been declared
+src/c/kstdlib.c(40): Warning! W102: Type mismatch (warning)
+src/c/kstdlib.c(40): Note! I2003: source conversion type is 'int'
+src/c/kstdlib.c(40): Note! I2004: target conversion type is 'char *'
+src/c/kstdlib.c(40): Error! E1054: Expression must be constant
+src/c/kstdlib.c(41): Error! E1099: Statement must be inside function. Probable cause: missing {

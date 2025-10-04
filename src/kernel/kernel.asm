@@ -5,6 +5,9 @@ start:
    mov si, msg_hello_world
    call puts
 
+.halt:
+   cli
+   hlt
 
 puts:
    push si

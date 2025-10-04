@@ -7,7 +7,7 @@ bits 16
 jmp short start
 nop
 
-bdb_oem: db "MSWIN4.1"
+bdb_oem: db 'MSWIN4.1'
 bdb_bytes_per_sector: dw 0200h
 bdb_sectors_per_cluster: db 1
 bdb_reserved_sectors: dw 1
@@ -18,16 +18,15 @@ bdb_media_descriptor_type: db 0F0h ; 3.5 inch floppy disk
 bdb_sectors_per_fat: dw 9
 bdb_sectors_per_track: dw 18
 bdb_heads: dw 2
-bdb_hidden_sectors: dd 0
-bdb_large_sectors: dd 0
+bdb_hidden_sectors: db 0
+bdb_large_sectors: db 0
 
 ; extended boot sector 
 ebr_drive_number: db 0
-                  db 0
 ebr_signature: db 29h
 ebr_volume_id: db 12h, 34h, 56h, 78h ; value doesnt matter
 ebr_volume_label: db 'ThoriumOS  ' ; padded to 11 bytes 
-ebr_system_id: db 'Fat12   ' ; padded to 8 bytes
+ebr_system_id: db 'FAT12   ' ; padded to 8 bytes
 
 start:
    ; setup data segments
@@ -40,18 +39,18 @@ start:
    mov sp, 07C00h
 
    push es
-   push word .after
+   push word .next
    retf
 
-.after
+.next:
    mov [ebr_drive_number], dl ; get drive number from dl
 
    mov si, msg_loading
-   puts
+   call puts
 
    push es
    mov ah, 08h
-   int 013h
+   int 13h
    jc floppy_error
    pop es
 
@@ -68,7 +67,7 @@ start:
    mov bl, [bdb_fat_count]
    xor bh, bh
    mul bx ; multiply with ax
-   add ax [bdb_reserved_sectors]
+   add ax, [bdb_reserved_sectors]
    push ax
 
    ; compute root dir size: (32 * num entries) / bytes per sector
@@ -92,9 +91,9 @@ start:
    xor bx, bx
    mov di, buffer
 
-.search_kernel
+.search_kernel:
    mov si, kernel_file
-   mov cx, 0Bh ; compare 11 chars
+   mov cx, 11 ; compare 11 chars
    push di
    repe cmpsb
    pop di
@@ -108,12 +107,82 @@ start:
    jmp kernel_not_found_error ; if not in root dir anymore throw error
 
 .kernel_found:
-   ; nothing for now
+   ; address should be in di
+   mov ax, [di + 26] ; first logical cluster , offset 26
+   mov [kernel_cluster], ax
 
+   mov ax, [bdb_reserved_sectors] ; load fat into mem
+   mov bx, buffer
+   mov cl, [bdb_sectors_per_fat]
+   mov dl, [ebr_drive_number]
+   call read_disk
+
+   mov bx, KERNEL_SEGMENT
+   mov es, bx
+   mov bx, KERNEL_OFFSET
+
+
+.load_kernel:
+   mov ax, [kernel_cluster]
+
+   add ax, 31 ; first sector = kernel cluster - 2 + start sector
+              ; start sector = reserved size + fats + root dir size = 33
+
+   mov cl, 1
+   mov dl, [ebr_drive_number]
+   call read_disk
+
+   add bx, [bdb_bytes_per_sector]
+
+   mov ax, [kernel_cluster]
+   mov cx, 3
+   mul cx
+   mov cx, 2
+   div cx ; dx = (kernel_cluster * 3) mod 2 ; ax = entry in fat
+
+   mov si, buffer
+   add si, ax ; set si to buffer + index 
+   mov ax, [ds:si] ; sets ax to ds:si
+
+   or dx, dx ; set zero flag if result = 0 meaning cluster mod 2 = 0 => even
+   jz .even
+
+; fat12 is 12 bit so 1.5 byte so it is stored in 3 bytes with one of them split
+; shr by 4 gives upper 12 bit of 16 bit
+; and with 0FFFh gives lower 12 bits of 16bit
+
+.odd:
+   shr ax, 4
+   jmp .next_cluster
+
+.even:
+   and ax, 0FFFh
+
+.next_cluster:
+   cmp ax, 0FF8h ; end of cluster chain
+   jae .done_reading ; jump if bigger or equal
+
+   mov [kernel_cluster], ax ; next cluster
+   jmp .load_kernel
+
+.done_reading:
+   mov dl, [ebr_drive_number]
+
+   mov ax, KERNEL_SEGMENT
+   mov ds, ax
+   mov es, ax
+
+   jmp KERNEL_SEGMENT:KERNEL_OFFSET
+
+   jmp wait_and_reboot ; unreachable
+
+   cli
+   hlt
 ; si points to string
 puts:
    push si
    push ax
+   push bx
 
 .loop:
    lodsb
@@ -127,6 +196,7 @@ puts:
    jmp .loop
 
 .done:
+   pop bx
    pop ax
    pop si
    ret
@@ -145,13 +215,8 @@ kernel_not_found_error:
 wait_and_reboot:
    mov ah, 0
    int 16h ; wait for keypress
-   jmp 0FFFFh ; jumps to beginiing of bios ; reboots
+   jmp 0FFFFh:0000h ; jumps to beginiing of bios ; reboots
 
-   hlt
-
-.halt:
-   cli
-   hlt
 
 ; Disk routines
 
@@ -210,7 +275,7 @@ read_disk:
    pusha ; save all regs
    stc ; set carry flags
    int 013h ; carry flag cleared => success 
-   jnz .done_retry ; exit loop
+   jnc .done_retry ; exit loop
 
    ; disk read failed
    popa 
