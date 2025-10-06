@@ -1,9 +1,0 @@
-compile using: /opt/watcom/binl/wcc -2 -s -zu -zls -ms -fo=build/kernel.obj src/c/kernel.c
-assemble with: nasm -f obj -o file1.obj file1.asm 
-link with: /opt/watcom/binl/wlink NAME build/kernel.bin FILE build/kernel_init.obj FILE build/kernel.obj FILE build/kstdlib.obj @link.lnk
-assemble the bootloader: nasm src/boot/bootloader.asm -f bin -o build/bootloader.bin
-
-create the floppy disk: dd if=/dev/zero of=build/main_floppy.img bs=512 count=2880
-mkfs.fat -F 12 -n "NBOS" build/main_floppy.img
-dd if=build/bootloader.bin of=build/main_floppy.img conv=notrunc
-mcopy -i build/main_floppy.img build/kernel.bin "::kernel.bin"
