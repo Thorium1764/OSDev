@@ -2,7 +2,6 @@
 #include "memdefs.h"
 #include "bootparams.h"
 #include "stdio.h"
-#include "elf.h"
 #include "string.h"
 #include "disk.h"
 #include "memdetect.h"
@@ -21,4 +20,17 @@ typedef void (*KernelStart)(BootParams* bootpara);
 void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
 {
    clrscr();
+
+   Disk disk;
+
+   if(!DiskInit(&disk, bootDrive))
+   {
+      puts("Disk initialization error\r\n");
+      goto error_loop;
+   }
+
+
+
+error_loop:
+   for(;;);
 }
