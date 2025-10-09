@@ -24,7 +24,7 @@ void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
 
    Disk disk;
 
-   if(!DiskInit(&disk, bootDrive))
+   if(!Disk_Init(&disk, bootDrive))
    {
       puts("Disk initialization error\r\n");
       goto error_loop;
