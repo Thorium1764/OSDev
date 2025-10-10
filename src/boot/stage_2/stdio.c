@@ -47,10 +47,10 @@ void setcursor(int x, int y)
 {
    int position = y * SCREEN_WIDTH + x;
    
-    x86_outb(0x3D4, 0x0F);
-    x86_outb(0x3D5, (uint8_t)(position & 0xFF));
-    x86_outb(0x3D4, 0x0E);
-    x86_outb(0x3D5, (uint8_t)((position >> 8) & 0xFF));
+    x86_out(0x3D4, 0x0F);
+    x86_out(0x3D5, (uint8_t)(position & 0xFF));
+    x86_out(0x3D4, 0x0E);
+    x86_out(0x3D5, (uint8_t)((position >> 8) & 0xFF));
 }
 
 void scrollback(int lines)
@@ -69,12 +69,12 @@ void scrollback(int lines)
             putcolor(x, y, DEFAULT_COLOR);
         }
 
-    g_ScreenY -= lines;
+    ScreenY -= lines;
 }
 
 void putc(char c)
 {
-    x86_outb(0xE9, c);
+    x86_out(0xE9, c);
     switch (c)
     {
         case '\n':
@@ -116,3 +116,51 @@ void puts(const char* str)
       str++;
    }
 }
+
+void int_to_string(int num, char* buf) {
+    int negative = 0;
+    char* p = buf;
+    char* start;
+    char* end;
+    char temp;
+    int digit;
+
+    if (num == 0) {
+        *p++ = '0';
+        *p = '\0';
+        return;
+    }
+
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+
+    while (num > 0) {
+        digit = num % 10;
+        *p++ = '0' + digit;
+        num /= 10;
+    }
+
+    if (negative) {
+        *p++ = '-';
+    }
+
+    *p = '\0';
+
+    start = buf;
+    end = p - 1;
+
+    while (start < end) {
+        temp = *start;
+        *start++ = *end;
+        *end-- = temp;
+    }
+}
+
+void putn(int num) {
+    char buf[12];
+    int_to_string(num, buf);
+    puts(buf);
+}
+

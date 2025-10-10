@@ -10,4 +10,6 @@ void clrscr();
 void scrollback(int lines);
 void putc(char c);
 void puts(const char* str);
+void putn(int num);
+void int_to_string(int num, char* buf);
 
