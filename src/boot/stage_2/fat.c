@@ -4,7 +4,7 @@
 #include "stdio.h"
 #include "disk.h"
 #include "memdefs.h"
-#include <math.h>
+#include "memory.h"
 
 
 #define SECTOR_SIZE 512
@@ -234,7 +234,27 @@ uint32_t FAT_NextCluster(Partition* disk, uint32_t currentCluster)
    }
 
    index -= (Data->FAT_Cache_Pos * SECTOR_SIZE);
+
+   uint32_t next_cluster;
+   if (FatType == 12) {
+      if (currentCluster % 2 == 0) // who thought 12 bits would be a good idea
+         next_cluster = (*(uint16_t*)(Data->FAT_Cache + index)) & 0x0FFF;
+      else 
+         next_cluster = (*(uint16_t*)(Data->FAT_Cache + index)) >> 4;
+
+      if (next_cluster >= 0xFF8)
+         next_cluster |= 0xFFFF0000;
+   } else if (FatType == 16) {
+      next_cluster = *(uint16_t*)(Data->FAT_Cache + index); 
+
+      if (next_cluster >= 0xFFF8)
+         next_cluster |= 0xFFFF0000;
+   } else //fat32 
+      next_cluster = *(uint32_t*)(Data->FAT_Cache + index);
+
+   return next_cluster;
 }
+
 
 
 

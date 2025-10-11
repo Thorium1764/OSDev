@@ -11,7 +11,7 @@
 #include "fat.h"
 #include "memory.h"
 
-uint8_t* KernelLoadBuffer = (uint8_t*)MEMORY_LOAD_KERNEL;
+uint8_t* KernelLoadBuffer = (uint8_t*)MEMORY_KERNEL_LOAD;
 uint8_t* Kernel = (uint8_t*)MEMORY_KERNEL_ADDR;
 
 BootParams bootParams;
@@ -24,7 +24,7 @@ void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
 
    Disk disk;
 
-   if(!Disk_Init(&disk, bootDrive))
+   if(!DiskInit(&disk, bootDrive))
    {
       puts("Disk initialization error\r\n");
       goto error_loop;
@@ -33,7 +33,10 @@ void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
    Partition part;
    detectPartition(&part, &disk, partition);
 
-   // do fat init
+   if (!FAT_INIT(&part)){
+      puts("FAT: initialization error!\r\n");
+      goto error_loop;
+   }
    
    bootParams.BootDevice = bootDrive;
    MemDetect(&bootParams.Memory);

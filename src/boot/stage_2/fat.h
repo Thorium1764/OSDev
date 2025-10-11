@@ -36,7 +36,7 @@ enum FAT_Attributes
    FAT_ARCHIVE = 0x20
 };
 
-uint8_t DISK_INIT(Partition* disk);
+uint8_t FAT_INIT(Partition* disk);
 FAT_FILE* FAT_OPEN(Partition* disk, const char* path);
 uint32_t FAT_READ(Partition* disk, FAT_FILE* file, uint32_t size, void* Data);
 uint8_t FAT_READ_ENTRY(Partition* disk, FAT_FILE* file, FAT_DirEntry* entry);
