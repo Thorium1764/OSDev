@@ -5,12 +5,15 @@
 #include "disk.h"
 #include "memdefs.h"
 #include "memory.h"
+#include "minmax.h"
+#include "string.h"
 
 
 #define SECTOR_SIZE 512
 #define ROOT_DIR_HANDLE -1
 #define FAT_CACHE_SIZE 5
 #define MAX_FILE_HANDLES 8
+#define MAX_PATH_SIZE 256
 
 typedef struct
 {
@@ -255,7 +258,135 @@ uint32_t FAT_NextCluster(Partition* disk, uint32_t currentCluster)
    return next_cluster;
 }
 
+uint32_t FAT_READ(Partition *disk, FAT_FILE *file, uint32_t size, void *data)
+{
+   FAT_FileData* fd = (file->Handle == ROOT_DIR_HANDLE)
+      ? &Data->RootDir
+      : &Data->OpenedFiles[file->Handle];
 
+   uint8_t* byte_data = (uint8_t*)data;
+   if (!fd->Public.isDir || (fd->Public.isDir && fd->Public.Size != 0))
+       size = min(size, fd->Public.Size - fd->Public.Pos);
+
+   while (size > 0){
+      uint32_t remaining = SECTOR_SIZE - (fd->Public.Pos % SECTOR_SIZE);
+      uint32_t to_take = min(remaining, size);
+
+      memcpy(byte_data, fd->Buffer + fd->Public.Pos % SECTOR_SIZE, to_take);
+      byte_data += to_take;
+      fd->Public.Pos += to_take;
+      size -= to_take;
+
+      if (remaining == to_take){
+         if (fd->Public.Handle == ROOT_DIR_HANDLE){
+            ++fd->CurrCluster;
+            if (!Part_ReadSectors(disk, fd->CurrCluster, 1, fd->Buffer)){
+               puts("FAT: error reading!\r\n");
+               break;
+            }
+         } else {
+            if (++fd->CurrSectInCluster >= Data->Boot_Sector.BootSector.SectorsPerCluster){
+               fd->CurrSectInCluster = 0;
+               fd->CurrCluster = FAT_NextCluster(disk, fd->CurrCluster);
+            }
+
+            if (fd->CurrCluster >= 0xFFFFFFF8){
+               fd->Public.Size = fd->Public.Pos;
+               break;
+            }
+
+            if (!Part_ReadSectors(disk, FAT_cluster_to_lba(fd->CurrCluster) + fd->CurrSectInCluster, 1, fd->Buffer)){
+               puts("FAT: error reading!\r\n");
+               break;
+            }
+         }
+      }
+   }
+   return byte_data - (uint8_t*)data;
+}
+
+uint8_t FAT_READ_ENTRY(Partition *disk, FAT_FILE *file, FAT_DirEntry *entry){
+   return FAT_READ(disk, file, sizeof(FAT_DirEntry), entry) == sizeof(FAT_DirEntry);
+}
+
+void FAT_GetShortName(const char* name, char shortName[12])
+{
+   memset(shortName, ' ', 12);
+   *(shortName + 11) = '\0';
+   const char* ext = strchr(name, '.');
+   if (ext == NULL)
+      ext = name + 11;
+
+   for (int i = 0; i < 8 && *(name + i) && name + i < ext; i++)
+      *(shortName + i) = toupper(*(name + i));
+
+   if (ext != name + 11){
+      for (int i = 0; i < 3 && *(ext + i + 1); i++)
+         *(shortName + i + 8) = toupper(*(ext + i + 1));
+   }
+}
+      
+uint8_t FAT_FIND_FILE(Partition* disk, FAT_FILE* file, const char* name, FAT_DirEntry* entry_out)
+{
+   char shortName[12];
+
+   FAT_DirEntry entry;
+   FAT_GetShortName(name, shortName);
+
+   while (FAT_READ_ENTRY(disk, file, &entry)){
+      if (memcmp(shortName, entry.Name, 11) == 0){
+         *entry_out = entry;
+         return 1;
+      }
+   }
+   return 0;
+}
+
+FAT_FILE* FAT_OPEN(Partition* disk, const char* path)
+{
+   char name[MAX_PATH_SIZE];
+
+   if (*path == '/')
+      path++;
+
+   FAT_FILE* current = &Data->RootDir.Public;
+   while (*path){
+      uint8_t isLast = 0;
+      const char* delim = strchr(path, '/');
+      if (delim != NULL) {
+         memcpy(name, path, delim - path);
+         name[delim - path] = '\0';
+         path = delim + 1;
+      } else {
+         unsigned len = strlen(path);
+         memcpy(name, path, len);
+         name[len + 1] = '\0';
+         path += len;
+         isLast = 0;
+      }
+
+      FAT_DirEntry entry;
+      if (FAT_FIND_FILE(disk, current, name, &entry)){
+         FAT_CLOSE(current);
+
+         if (!isLast && entry.Attributes & FAT_DIR == 0) {
+            puts("FAT: ");
+            puts(name);
+            puts(" is not a directory!\r\n");
+            return NULL;
+         }
+         current = FAT_OpenEntry(disk, &entry);
+      } else {
+         FAT_CLOSE(current);
+         puts("FAT: ");
+         puts(name);
+         puts(" not found\r\n");
+
+         return NULL;
+      }
+   }
+   return current;
+}
 
 
 

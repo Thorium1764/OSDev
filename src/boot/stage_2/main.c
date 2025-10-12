@@ -22,6 +22,8 @@ void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
 {
    clrscr();
 
+   puts("DEBUG: STAGE 2");
+
    Disk disk;
 
    if(!DiskInit(&disk, bootDrive))

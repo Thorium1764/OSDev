@@ -69,3 +69,13 @@ int8_t strcmp(const char* p1, const char* p2)
    }
    return 0;
 }
+
+uint8_t islower(char chr)
+{
+    return chr >= 'a' && chr <= 'z';
+}
+
+uint8_t toupper(char chr)
+{
+   return islower(chr) ? (chr + 'A' - 'a') : chr;
+}
