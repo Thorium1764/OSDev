@@ -6,7 +6,7 @@ extern __bss_start
 extern __end
 extern _init
 
-extern centry
+extern start
 global entry
 
 entry:
@@ -60,7 +60,7 @@ entry:
    xor edx, edx
    mov dl, [g_Bootdrive]
    push edx ; push the boot drive number to the stack
-   call centry
+   call start
 
    cli 
    hlt
@@ -70,7 +70,7 @@ EnableA20:
    ; disable keyboard
    call A20WaitInput
    mov al, KbdControllerDisableKeyboard
-   out KbdControllerCommandPort
+   out KbdControllerCommandPort, al
 
    ; read control output
    call A20WaitInput
@@ -167,6 +167,6 @@ g_GDT:      ; NULL descriptor
 g_GDTDesc:  dw g_GDTDesc - g_GDT - 1    ; limit = size of GDT
             dd g_GDT                    ; address of GDT
 
-g_BootDrive: db 0
-g_BootPartitionSeg: dw 0
-g_BootPartitionOff: dw 0
+g_Bootdrive: db 0
+g_BootPartSegment: dw 0
+g_BootPartOffset: dw 0

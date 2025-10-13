@@ -13,7 +13,7 @@ void MemDetect(MemoryInfo* info)
    uint32_t id = 0;
    int next;
    RegionCount = 0;
-   next = x86_GetNextE820BLock(&block, &id);
+   next = x86_GetNextE820Block(&block, &id);
 
    while (next > 0 && id != 0)
    {
@@ -22,7 +22,7 @@ void MemDetect(MemoryInfo* info)
       Regions[RegionCount].Type = block.type;
       Regions[RegionCount].ACPI = block.ACPI;
       RegionCount++;
-      next = x86_GetNextE820BLock(&block, &id);
+      next = x86_GetNextE820Block(&block, &id);
    }
    
    info->Regions = Regions;

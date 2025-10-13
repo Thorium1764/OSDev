@@ -11,6 +11,7 @@ section .fsjump
    jmp short start
    nop
 
+%define FILESYSTEM fat32 ; i dont care
 
 section .fsheaders
 
@@ -54,7 +55,7 @@ section .entry
 
    start:
       ; move partition entry from MBR, so we dont overwrite it
-      mov ax PART_ENTRY_SEGMENT
+      mov ax, PART_ENTRY_SEGMENT
       mov es, ax
       mov di, PART_ENTRY_OFFSET
       mov cx, 16
@@ -79,7 +80,7 @@ section .entry
       
       ; check for extensions
       mov ah, 41h
-      mov bx 55AAh
+      mov bx, 55AAh
       stc
       int 13h
 
@@ -120,7 +121,7 @@ section .entry
    .done_reading:
       mov dl, [ebr_drive_number]
       mov si, PART_ENTRY_OFFSET
-      mov di PART_ENTRY_SEGMENT
+      mov di, PART_ENTRY_SEGMENT
 
       mov ax, STAGE2_SEGMENT
       mov ds, ax
@@ -164,8 +165,8 @@ section .text
       call puts
       jmp wait_and_reboot
 
-   kernel_not_found_error:
-      mov si, msg_kernel_not_found
+   stage2_not_found_error:
+      mov si, msg_stage2_not_found
       call puts
       jmp wait_and_reboot
 
@@ -226,7 +227,7 @@ section .text
       jne .no_extensions
 
       ; extensions
-      mov [extensions.lba], eax
+      mov [extensions.lba_addr], eax
       mov [extensions.offset], bx
       mov [extensions.count], cl
 
