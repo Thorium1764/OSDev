@@ -1,4 +1,4 @@
-#include "x86.h"
+#include "io.h"
 #include "stdint.h"
 #include "stdio.h"
 
@@ -47,10 +47,10 @@ void setcursor(int x, int y)
 {
    int position = y * SCREEN_WIDTH + x;
    
-    x86_out(0x3D4, 0x0F);
-    x86_out(0x3D5, (uint8_t)(position & 0xFF));
-    x86_out(0x3D4, 0x0E);
-    x86_out(0x3D5, (uint8_t)((position >> 8) & 0xFF));
+    i686_out(0x3D4, 0x0F);
+    i686_out(0x3D5, (uint8_t)(position & 0xFF));
+    i686_out(0x3D4, 0x0E);
+    i686_out(0x3D5, (uint8_t)((position >> 8) & 0xFF));
 }
 
 void scrollback(int lines)
@@ -74,7 +74,7 @@ void scrollback(int lines)
 
 void putc(char c)
 {
-    x86_out(0xE9, c);
+    i686_out(0xE9, c);
     switch (c)
     {
         case '\n':
