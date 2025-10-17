@@ -1,0 +1,259 @@
+
+There are no discarded input sections
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+LOAD /home/tobias/code/OSDev/build/stage2/asm/crti.obj
+LOAD /home/tobias/code/OSDev/build/stage2/asm/crtn.obj
+LOAD /home/tobias/code/OSDev/build/stage2/asm/entry.obj
+LOAD /home/tobias/code/OSDev/build/stage2/asm/x86.obj
+LOAD /home/tobias/code/OSDev/build/stage2/c/bin.obj
+LOAD /home/tobias/code/OSDev/build/stage2/c/disk.obj
+LOAD /home/tobias/code/OSDev/build/stage2/c/fat.obj
+LOAD /home/tobias/code/OSDev/build/stage2/c/main.obj
+LOAD /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+LOAD /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+LOAD /home/tobias/code/OSDev/build/stage2/c/memory.obj
+LOAD /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+LOAD /home/tobias/code/OSDev/build/stage2/c/string.obj
+LOAD /usr/lib/gcc/i686-elf/11.2.0/libgcc.a
+                0x00000500                        phys = 0x500
+                0x00000500                        . = phys
+
+.entry          0x00000500       0xe3
+                0x00000500                        __entry_start = .
+ *(.entry)
+ .entry         0x00000500       0xe3 /home/tobias/code/OSDev/build/stage2/asm/entry.obj
+                0x00000500                entry
+
+.text           0x000005f0     0x1b30
+                0x000005f0                        __text_start = .
+ *(.text)
+ .text          0x000005f0      0x23a /home/tobias/code/OSDev/build/stage2/asm/x86.obj
+                0x000005f0                x86_out
+                0x000005fb                x86_in
+                0x00000604                x86_DiskReset
+                0x0000064f                x86_DiskRead
+                0x000006c8                x86_Disk_GetDriveParams
+                0x00000786                x86_GetNextE820Block
+ .text          0x0000082a       0xa6 /home/tobias/code/OSDev/build/stage2/c/bin.obj
+                0x0000082a                BIN_Read
+ .text          0x000008d0      0x191 /home/tobias/code/OSDev/build/stage2/c/disk.obj
+                0x000008d0                DiskInit
+                0x00000938                lbaToChs
+                0x000009c5                DiskRead
+ .text          0x00000a61      0xc3b /home/tobias/code/OSDev/build/stage2/c/fat.obj
+                0x00000a61                FAT_cluster_to_lba
+                0x00000a82                FAT_ReadBS
+                0x00000a9f                FAT_ReadFat
+                0x00000ade                FAT_Detect
+                0x00000b42                FAT_INIT
+                0x00000d96                FAT_CLOSE
+                0x00000de4                FAT_OpenEntry
+                0x00000fe1                FAT_NextCluster
+                0x00001142                FAT_READ
+                0x0000138e                FAT_READ_ENTRY
+                0x000013af                FAT_GetShortName
+                0x000014a8                FAT_FIND_FILE
+                0x00001534                FAT_OPEN
+ .text          0x0000169c      0x129 /home/tobias/code/OSDev/build/stage2/c/main.obj
+                0x0000169c                start
+ .text          0x000017c5       0xaa /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+                0x000017c5                detectPartition
+                0x0000183f                Part_ReadSectors
+ .text          0x0000186f       0xf2 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+                0x0000186f                MemDetect
+ .text          0x00001961      0x11e /home/tobias/code/OSDev/build/stage2/c/memory.obj
+                0x00001961                memcpy
+                0x000019b3                memset
+                0x000019f6                memcmp
+                0x00001a56                segoffset_to_linear
+ .text          0x00001a7f      0x510 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+                0x00001a7f                putchr
+                0x00001aae                putcolor
+                0x00001ae0                getchr
+                0x00001b02                getcolor
+                0x00001b27                clrscr
+                0x00001bb5                setcursor
+                0x00001c26                scrollback
+                0x00001d14                putc
+                0x00001e39                puts
+                0x00001e68                int_to_string
+                0x00001f68                putn
+ .text          0x00001f8f      0x191 /home/tobias/code/OSDev/build/stage2/c/string.obj
+                0x00001f8f                strlen
+                0x00001fb3                strchr
+                0x00001ff1                strcpy
+                0x00002045                strcmp
+                0x000020ce                islower
+                0x000020f4                toupper
+
+.data           0x00002120        0xc
+                0x00002120                        __data_start = .
+ *(.data)
+ .data          0x00002120        0x0 /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .data          0x00002120        0x0 /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .data          0x00002120        0x0 /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .data          0x00002120        0x8 /home/tobias/code/OSDev/build/stage2/c/main.obj
+                0x00002120                KernelLoadBuffer
+                0x00002124                Kernel
+ .data          0x00002128        0x0 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .data          0x00002128        0x0 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+ .data          0x00002128        0x0 /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .data          0x00002128        0x4 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+                0x00002128                ScreenBuffer
+ .data          0x0000212c        0x0 /home/tobias/code/OSDev/build/stage2/c/string.obj
+
+.rodata         0x0000212c      0x199
+                0x0000212c                        __rodata_start = .
+ *(.rodata)
+ .rodata        0x0000212c       0x28 /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .rodata        0x00002154       0xc8 /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .rodata        0x0000221c       0x9e /home/tobias/code/OSDev/build/stage2/c/main.obj
+ *fill*         0x000022ba        0x2 
+ .rodata        0x000022bc        0x9 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+                0x000022bc                SCREEN_WIDTH
+                0x000022c0                SCREEN_HEIGHT
+                0x000022c4                DEFAULT_COLOR
+
+.init           0x000022c5        0x5
+ .init          0x000022c5        0x3 /home/tobias/code/OSDev/build/stage2/asm/crti.obj
+                0x000022c5                _init
+ .init          0x000022c8        0x2 /home/tobias/code/OSDev/build/stage2/asm/crtn.obj
+
+.fini           0x000022ca        0x5
+ .fini          0x000022ca        0x3 /home/tobias/code/OSDev/build/stage2/asm/crti.obj
+                0x000022ca                _fini
+ .fini          0x000022cd        0x2 /home/tobias/code/OSDev/build/stage2/asm/crtn.obj
+
+.bss            0x000022e0     0x182c
+                0x000022e0                        __bss_start = .
+ *(.bss)
+ .bss           0x000022e0        0x0 /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .bss           0x000022e0        0x0 /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .bss           0x000022e0       0x14 /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .bss           0x000022f4        0xc /home/tobias/code/OSDev/build/stage2/c/main.obj
+                0x000022f4                bootParams
+ .bss           0x00002300        0x0 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .bss           0x00002300     0x1804 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+                0x00002300                Regions
+                0x00003b00                RegionCount
+ .bss           0x00003b04        0x0 /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .bss           0x00003b04        0x8 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+                0x00003b04                ScreenX
+                0x00003b08                ScreenY
+ .bss           0x00003b0c        0x0 /home/tobias/code/OSDev/build/stage2/c/string.obj
+                0x00003b0c                        __end = .
+OUTPUT(/home/tobias/code/OSDev/build/stage2.bin binary)
+
+.debug_info     0x00000000     0x20f2
+ .debug_info    0x00000000      0x29a /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .debug_info    0x0000029a      0x2aa /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .debug_info    0x00000544      0xbdf /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .debug_info    0x00001123      0x349 /home/tobias/code/OSDev/build/stage2/c/main.obj
+ .debug_info    0x0000146c      0x274 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .debug_info    0x000016e0      0x1f7 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+ .debug_info    0x000018d7      0x23e /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .debug_info    0x00001b15      0x416 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+ .debug_info    0x00001f2b      0x1c7 /home/tobias/code/OSDev/build/stage2/c/string.obj
+
+.debug_abbrev   0x00000000      0xb0a
+ .debug_abbrev  0x00000000       0xfe /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .debug_abbrev  0x000000fe      0x140 /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .debug_abbrev  0x0000023e      0x270 /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .debug_abbrev  0x000004ae      0x13a /home/tobias/code/OSDev/build/stage2/c/main.obj
+ .debug_abbrev  0x000005e8      0x116 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .debug_abbrev  0x000006fe       0xf7 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+ .debug_abbrev  0x000007f5       0xc7 /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .debug_abbrev  0x000008bc      0x173 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+ .debug_abbrev  0x00000a2f       0xdb /home/tobias/code/OSDev/build/stage2/c/string.obj
+
+.debug_aranges  0x00000000      0x120
+ .debug_aranges
+                0x00000000       0x20 /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .debug_aranges
+                0x00000020       0x20 /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .debug_aranges
+                0x00000040       0x20 /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .debug_aranges
+                0x00000060       0x20 /home/tobias/code/OSDev/build/stage2/c/main.obj
+ .debug_aranges
+                0x00000080       0x20 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .debug_aranges
+                0x000000a0       0x20 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+ .debug_aranges
+                0x000000c0       0x20 /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .debug_aranges
+                0x000000e0       0x20 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+ .debug_aranges
+                0x00000100       0x20 /home/tobias/code/OSDev/build/stage2/c/string.obj
+
+.debug_line     0x00000000      0xdd9
+ .debug_line    0x00000000       0x90 /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .debug_line    0x00000090       0xe4 /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .debug_line    0x00000174      0x5be /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .debug_line    0x00000732       0xa7 /home/tobias/code/OSDev/build/stage2/c/main.obj
+ .debug_line    0x000007d9       0xa6 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .debug_line    0x0000087f       0xae /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+ .debug_line    0x0000092d      0x100 /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .debug_line    0x00000a2d      0x274 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+ .debug_line    0x00000ca1      0x138 /home/tobias/code/OSDev/build/stage2/c/string.obj
+
+.debug_str      0x00000000     0x12d1
+ .debug_str     0x00000000      0x1ad /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .debug_str     0x000001ad      0x182 /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .debug_str     0x0000032f      0x634 /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .debug_str     0x00000963      0x234 /home/tobias/code/OSDev/build/stage2/c/main.obj
+ .debug_str     0x00000b97      0x1a6 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .debug_str     0x00000d3d      0x172 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+ .debug_str     0x00000eaf      0x151 /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .debug_str     0x00001000      0x1bb /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+ .debug_str     0x000011bb      0x116 /home/tobias/code/OSDev/build/stage2/c/string.obj
+
+.debug_line_str
+                0x00000000      0x4cc
+ .debug_line_str
+                0x00000000       0x91 /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .debug_line_str
+                0x00000091       0x7d /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .debug_line_str
+                0x0000010e       0x9a /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .debug_line_str
+                0x000001a8       0xaa /home/tobias/code/OSDev/build/stage2/c/main.obj
+ .debug_line_str
+                0x00000252       0x83 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .debug_line_str
+                0x000002d5       0x92 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+ .debug_line_str
+                0x00000367       0x76 /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .debug_line_str
+                0x000003dd       0x79 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+ .debug_line_str
+                0x00000456       0x76 /home/tobias/code/OSDev/build/stage2/c/string.obj
+
+.comment        0x00000000       0xab
+ .comment       0x00000000       0x13 /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .comment       0x00000013       0x13 /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .comment       0x00000026       0x13 /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .comment       0x00000039       0x13 /home/tobias/code/OSDev/build/stage2/c/main.obj
+ .comment       0x0000004c       0x13 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .comment       0x0000005f       0x13 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+ .comment       0x00000072       0x13 /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .comment       0x00000085       0x13 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+ .comment       0x00000098       0x13 /home/tobias/code/OSDev/build/stage2/c/string.obj
+
+.debug_frame    0x00000000      0x614
+ .debug_frame   0x00000000       0x34 /home/tobias/code/OSDev/build/stage2/c/bin.obj
+ .debug_frame   0x00000034       0x80 /home/tobias/code/OSDev/build/stage2/c/disk.obj
+ .debug_frame   0x000000b4      0x1c8 /home/tobias/code/OSDev/build/stage2/c/fat.obj
+ .debug_frame   0x0000027c       0x2c /home/tobias/code/OSDev/build/stage2/c/main.obj
+ .debug_frame   0x000002a8       0x54 /home/tobias/code/OSDev/build/stage2/c/mbr.obj
+ .debug_frame   0x000002fc       0x38 /home/tobias/code/OSDev/build/stage2/c/memdetect.obj
+ .debug_frame   0x00000334       0x94 /home/tobias/code/OSDev/build/stage2/c/memory.obj
+ .debug_frame   0x000003c8      0x178 /home/tobias/code/OSDev/build/stage2/c/stdio.obj
+ .debug_frame   0x00000540       0xd4 /home/tobias/code/OSDev/build/stage2/c/string.obj

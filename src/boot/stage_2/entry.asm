@@ -4,7 +4,6 @@ section .entry
 
 extern __bss_start
 extern __end
-extern _init
 
 extern start
 global entry
@@ -48,14 +47,6 @@ entry:
    mov al, 0
    cld
    rep stosb
-
-   call _init
-
-   ; send boot drive as arg to c 
-   mov dx, [g_BootPartSegment]
-   shl edx, 16 ; push it into upper half of edx
-   mov dx, [g_BootPartOffset]
-   push edx ; push on the stack
 
    xor edx, edx
    mov dl, [g_Bootdrive]

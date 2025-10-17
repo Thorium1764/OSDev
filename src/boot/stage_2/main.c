@@ -18,11 +18,11 @@ BootParams bootParams;
 
 typedef void (*KernelStart)(BootParams* bootpara); //the pointer is now interpreted as a function and the cpu will jmp to the address
 
-void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
+void __attribute__((cdecl)) start(uint16_t bootDrive)
 {
    clrscr();
 
-   puts("DEBUG: STAGE 2");
+   puts("DEBUG: 2");
 
    Disk disk;
 
@@ -35,13 +35,19 @@ void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
    Partition part;
    detectPartition(&part, &disk, partition);
 
+   puts("DEBUG: 3");
+
    if (!FAT_INIT(&part)){
       puts("FAT: initialization error!\r\n");
       goto error_loop;
    }
+
+   puts("DEBUG: 4");
    
    bootParams.BootDevice = bootDrive;
    MemDetect(&bootParams.Memory);
+
+   puts("DEBUG: 5");
    
    KernelStart entryPoint;
 
@@ -50,6 +56,8 @@ void __attribute__((cdecl)) start(uint16_t bootDrive, void* partition)
       puts("Kernel read failed, booting halted\r\n");
       goto error_loop;
    }
+
+   puts("DEBUG: 6");
 
    entryPoint(&bootParams);
 

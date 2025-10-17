@@ -4,5 +4,5 @@
 
 void i686_iowait()
 {
-    i686_outb(UNUSED_PORT, 0);
+    i686_out(UNUSED_PORT, 0);
 }
