@@ -1,4 +1,3 @@
-#include "mbr.h"
 #include "stdint.h"
 #include "fat.h"
 #include "stdio.h"
@@ -26,6 +25,7 @@ typedef struct
    uint8_t SystemID[8];
 } __attribute__((packed)) FAT_EBR;
 
+/* fat32
 typedef struct
 {
    uint32_t SectorsPerFat;
@@ -36,29 +36,25 @@ typedef struct
    uint16_t BackupBootSector;
    uint8_t  Reserved[12];
    FAT_EBR EBR;
-} __attribute__((packed)) FAT32_EBR;
+} __attribute__((packed)) FAT32_EBR;*/
 
 typedef struct 
 {
-    uint8_t BootJumpInstruction[3];
-    uint8_t OemIdentifier[8];
-    uint16_t BytesPerSector;
-    uint8_t SectorsPerCluster;
-    uint16_t ReservedSectors;
-    uint8_t FatCount;
-    uint16_t DirEntryCount;
-    uint16_t TotalSectors;
-    uint8_t MediaDescriptorType;
-    uint16_t SectorsPerFat;
-    uint16_t SectorsPerTrack;
-    uint16_t Heads;
-    uint32_t HiddenSectors;
-    uint32_t LargeSectorCount;
-
-    union {
-        FAT_EBR EBR12_16;
-        FAT32_EBR EBR32;
-    };
+   uint8_t BootJumpInstruction[3];
+   uint8_t OemIdentifier[8];
+   uint16_t BytesPerSector;
+   uint8_t SectorsPerCluster;
+   uint16_t ReservedSectors;
+   uint8_t FatCount;
+   uint16_t DirEntryCount;
+   uint16_t TotalSectors;
+   uint8_t MediaDescriptorType;
+   uint16_t SectorsPerFat;
+   uint16_t SectorsPerTrack;
+   uint16_t Heads;
+   uint32_t HiddenSectors;
+   uint32_t LargeSectorCount;
+   FAT_EBR ebr;
 } __attribute__((packed)) FAT_BootSector;
 
 typedef struct
@@ -78,17 +74,14 @@ typedef struct
       FAT_BootSector BootSector;
       uint8_t BootSectorBytes[SECTOR_SIZE];
    } Boot_Sector;
+
    FAT_FileData RootDir;
    FAT_FileData OpenedFiles[MAX_FILE_HANDLES];
-   uint8_t FAT_Cache[FAT_CACHE_SIZE * SECTOR_SIZE];
-   uint32_t FAT_Cache_Pos;
 } FAT_DATA;
 
 static FAT_DATA* Data;
 static uint32_t DataSectionLba;
-static uint8_t FatType;
-static uint32_t TotalSectors;
-static uint32_t SectorsPerFat;
+static uint8_t* Fat = NULL;
 
 
 uint32_t FAT_cluster_to_lba(uint32_t cluster)
@@ -96,27 +89,18 @@ uint32_t FAT_cluster_to_lba(uint32_t cluster)
    return DataSectionLba + (cluster - 2) * Data->Boot_Sector.BootSector.SectorsPerCluster;
 }
 
-uint8_t FAT_ReadBS(Partition* disk)
+uint8_t FAT_ReadBS(Disk* disk)
 {
-   return Part_ReadSectors(disk,0, 1, Data->Boot_Sector.BootSectorBytes);
+   return DiskRead(disk,0, 1, Data->Boot_Sector.BootSectorBytes);
 }
 
-uint8_t FAT_ReadFat(Partition* disk, uint64_t lba)
+uint8_t FAT_ReadFat(Disk* disk)
 {
-   return Part_ReadSectors(disk, Data->Boot_Sector.BootSector.ReservedSectors + lba, FAT_CACHE_SIZE, Data->FAT_Cache);
+   return DiskRead(disk, Data->Boot_Sector.BootSector.ReservedSectors, Data->Boot_Sector.BootSector.SectorsPerFat, Fat);
 }
 
-void FAT_Detect(Partition* disk)
-{
-   uint32_t dataCluster = (TotalSectors - DataSectionLba) / Data->Boot_Sector.BootSector.SectorsPerCluster;
-   if (dataCluster < 0xFF5)
-      FatType = 12;
-   else if (Data->Boot_Sector.BootSector.SectorsPerFat != 0)
-      FatType = 16;
-   else FatType = 32;
-}
 
-uint8_t FAT_INIT(Partition* disk)
+uint8_t FAT_INIT(Disk* disk)
 {
    Data = (FAT_DATA*)MEMORY_FAT_ADDR;
 
@@ -126,30 +110,26 @@ uint8_t FAT_INIT(Partition* disk)
       return 0;
    }
 
-   Data->FAT_Cache_Pos = 0xFFFFFFFF;
-   TotalSectors = Data->Boot_Sector.BootSector.TotalSectors;
-   if (TotalSectors == 0) // fat32 
-      TotalSectors = Data->Boot_Sector.BootSector.LargeSectorCount;
-
-   uint8_t isFat32 = 0;
-   SectorsPerFat = Data->Boot_Sector.BootSector.SectorsPerFat;
-   if (SectorsPerFat == 0){ //FAT32
-      isFat32 = 1;
-      SectorsPerFat = Data->Boot_Sector.BootSector.EBR32.SectorsPerFat;
+   Fat = (uint8_t*)Data + sizeof(FAT_DATA);
+   uint32_t fat_size = Data->Boot_Sector.BootSector.BytesPerSector * Data->Boot_Sector.BootSector.SectorsPerFat;
+   if (sizeof(FAT_DATA) + fat_size >= MEMORY_FAT_SIZE){
+      puts("FAT: not enough memory to read fat. Required: ");
+      putn(sizeof(FAT_DATA) + fat_size);
+      puts("; Available: ");
+      putn(MEMORY_FAT_SIZE);
+      puts(".\r\n");
+      return 0;
    }
 
-   uint32_t root_dir_lba;
-   uint32_t root_dir_size;
-   if (isFat32) {
-      DataSectionLba = Data->Boot_Sector.BootSector.ReservedSectors + SectorsPerFat * Data->Boot_Sector.BootSector.FatCount;
-      root_dir_lba = FAT_cluster_to_lba(Data->Boot_Sector.BootSector.EBR32.RootDirCluster);
-      root_dir_size = 0;
-   } else {
-      root_dir_lba = Data->Boot_Sector.BootSector.ReservedSectors + SectorsPerFat * Data->Boot_Sector.BootSector.FatCount;
-      root_dir_size = sizeof(FAT_DirEntry) * Data->Boot_Sector.BootSector.DirEntryCount;
-      uint32_t root_dir_sectors = (root_dir_size + Data->Boot_Sector.BootSector.BytesPerSector - 1) / Data->Boot_Sector.BootSector.BytesPerSector;
-      DataSectionLba = root_dir_lba + root_dir_sectors;
+   if (!FAT_ReadFat(disk)){
+      puts("FAT: FAT read failed\r\n");
+      return 0;
    }
+
+
+   uint32_t root_dir_lba = Data->Boot_Sector.BootSector.ReservedSectors + Data->Boot_Sector.BootSector.SectorsPerFat * Data->Boot_Sector.BootSector.FatCount;
+   uint32_t root_dir_size = sizeof(FAT_DirEntry) * Data->Boot_Sector.BootSector.DirEntryCount;
+   
 
    Data->RootDir.Public.Handle = ROOT_DIR_HANDLE;
    Data->RootDir.Public.isDir = 1;
@@ -160,12 +140,13 @@ uint8_t FAT_INIT(Partition* disk)
    Data->RootDir.CurrCluster = root_dir_lba;
    Data->RootDir.CurrSectInCluster = 0;
 
-   if (!Part_ReadSectors(disk,  root_dir_lba, 1, Data->RootDir.Buffer)){
+   if (!DiskRead(disk,  root_dir_lba, 1, Data->RootDir.Buffer)){
       puts("FAT: root directory read failed\r\n");
       return 0;
    }
-   
-   FAT_Detect(disk);
+
+   uint32_t root_dir_sectors = (root_dir_size + Data->Boot_Sector.BootSector.BytesPerSector - 1) / Data->Boot_Sector.BootSector.BytesPerSector;
+   DataSectionLba = root_dir_lba + root_dir_sectors;
 
    for (int i = 0; i < MAX_FILE_HANDLES; i++)
       Data->OpenedFiles[i].Opened = 0;
@@ -182,11 +163,11 @@ void FAT_CLOSE(FAT_FILE *file){
    }
 }
 
-FAT_FILE* FAT_OpenEntry(Partition* disk, FAT_DirEntry* entry)
+FAT_FILE* FAT_OpenEntry(Disk* disk, FAT_DirEntry* entry)
 {
    int16_t handle = -1;
    for (int i = 0; i < MAX_FILE_HANDLES && handle < 0; i++){
-        if (Data->OpenedFiles[i].Opened)
+        if (!Data->OpenedFiles[i].Opened)
             handle = i;
    }
 
@@ -204,7 +185,7 @@ FAT_FILE* FAT_OpenEntry(Partition* disk, FAT_DirEntry* entry)
    fd->CurrCluster = fd->FirstCluster;
    fd->CurrSectInCluster = 0;
 
-   if (!Part_ReadSectors(disk, FAT_cluster_to_lba(fd->CurrCluster), 1, fd->Buffer)) {
+   if (!DiskRead(disk, FAT_cluster_to_lba(fd->CurrCluster), 1, fd->Buffer)) {
       puts("FAT: entry open failed - read error: cluster = ");
       putn(fd->CurrCluster);
       puts(" lba = ");
@@ -220,45 +201,16 @@ FAT_FILE* FAT_OpenEntry(Partition* disk, FAT_DirEntry* entry)
    return &fd->Public;
 }
 
-uint32_t FAT_NextCluster(Partition* disk, uint32_t currentCluster)
+uint32_t FAT_NextCluster(uint32_t currentCluster)
 {
-   uint32_t index;
-   if (FatType == 12)
-      index = currentCluster * 3 / 2; // 1.5 bytes
-   else if (FatType == 16)
-      index = currentCluster * 2; // 2 bytes
-   else if (FatType == 32)
-      index = currentCluster * 4; // 4 bytes
-
-   uint32_t fatIndex = index / SECTOR_SIZE;
-   if (fatIndex < Data->FAT_Cache_Pos || fatIndex >= Data->FAT_Cache_Pos + FAT_CACHE_SIZE){
-      FAT_ReadFat(disk, fatIndex);
-      Data->FAT_Cache_Pos = fatIndex;
-   }
-
-   index -= (Data->FAT_Cache_Pos * SECTOR_SIZE);
-
-   uint32_t next_cluster;
-   if (FatType == 12) {
-      if (currentCluster % 2 == 0) // who thought 12 bits would be a good idea
-         next_cluster = (*(uint16_t*)(Data->FAT_Cache + index)) & 0x0FFF;
-      else 
-         next_cluster = (*(uint16_t*)(Data->FAT_Cache + index)) >> 4;
-
-      if (next_cluster >= 0xFF8)
-         next_cluster |= 0xFFFF0000;
-   } else if (FatType == 16) {
-      next_cluster = *(uint16_t*)(Data->FAT_Cache + index); 
-
-      if (next_cluster >= 0xFFF8)
-         next_cluster |= 0xFFFF0000;
-   } else //fat32 
-      next_cluster = *(uint32_t*)(Data->FAT_Cache + index);
-
-   return next_cluster;
+   uint32_t index = currentCluster * 3 / 2;
+   if (currentCluster % 2 == 0)
+      return (*(uint16_t*)(Fat + index)) & 0x0FFF;
+   else 
+      return (*(uint16_t*)(Fat + index)) >> 4;
 }
 
-uint32_t FAT_READ(Partition *disk, FAT_FILE *file, uint32_t size, void *data)
+uint32_t FAT_READ(Disk *disk, FAT_FILE *file, uint32_t size, void *data)
 {
    FAT_FileData* fd = (file->Handle == ROOT_DIR_HANDLE)
       ? &Data->RootDir
@@ -280,22 +232,22 @@ uint32_t FAT_READ(Partition *disk, FAT_FILE *file, uint32_t size, void *data)
       if (remaining == to_take){
          if (fd->Public.Handle == ROOT_DIR_HANDLE){
             ++fd->CurrCluster;
-            if (!Part_ReadSectors(disk, fd->CurrCluster, 1, fd->Buffer)){
+            if (!DiskRead(disk, fd->CurrCluster, 1, fd->Buffer)){
                puts("FAT: error reading!\r\n");
                break;
             }
          } else {
             if (++fd->CurrSectInCluster >= Data->Boot_Sector.BootSector.SectorsPerCluster){
                fd->CurrSectInCluster = 0;
-               fd->CurrCluster = FAT_NextCluster(disk, fd->CurrCluster);
+               fd->CurrCluster = FAT_NextCluster(fd->CurrCluster);
             }
 
-            if (fd->CurrCluster >= 0xFFFFFFF8){
+            if (fd->CurrCluster >= 0xFF8){
                fd->Public.Size = fd->Public.Pos;
                break;
             }
 
-            if (!Part_ReadSectors(disk, FAT_cluster_to_lba(fd->CurrCluster) + fd->CurrSectInCluster, 1, fd->Buffer)){
+            if (!DiskRead(disk, FAT_cluster_to_lba(fd->CurrCluster) + fd->CurrSectInCluster, 1, fd->Buffer)){
                puts("FAT: error reading!\r\n");
                break;
             }
@@ -305,7 +257,8 @@ uint32_t FAT_READ(Partition *disk, FAT_FILE *file, uint32_t size, void *data)
    return byte_data - (uint8_t*)data;
 }
 
-uint8_t FAT_READ_ENTRY(Partition *disk, FAT_FILE *file, FAT_DirEntry *entry){
+uint8_t FAT_READ_ENTRY(Disk *disk, FAT_FILE *file, FAT_DirEntry *entry)
+{
    return FAT_READ(disk, file, sizeof(FAT_DirEntry), entry) == sizeof(FAT_DirEntry);
 }
 
@@ -326,7 +279,7 @@ void FAT_GetShortName(const char* name, char shortName[12])
    }
 }
       
-uint8_t FAT_FIND_FILE(Partition* disk, FAT_FILE* file, const char* name, FAT_DirEntry* entry_out)
+uint8_t FAT_FIND_FILE(Disk* disk, FAT_FILE* file, const char* name, FAT_DirEntry* entry_out)
 {
    char shortName[12];
 
@@ -342,7 +295,7 @@ uint8_t FAT_FIND_FILE(Partition* disk, FAT_FILE* file, const char* name, FAT_Dir
    return 0;
 }
 
-FAT_FILE* FAT_OPEN(Partition* disk, const char* path)
+FAT_FILE* FAT_OPEN(Disk* disk, const char* path)
 {
    char name[MAX_PATH_SIZE];
 
@@ -355,14 +308,14 @@ FAT_FILE* FAT_OPEN(Partition* disk, const char* path)
       const char* delim = strchr(path, '/');
       if (delim != NULL) {
          memcpy(name, path, delim - path);
-         name[delim - path] = '\0';
+         name[delim - path + 1] = '\0';
          path = delim + 1;
       } else {
          unsigned len = strlen(path);
          memcpy(name, path, len);
          name[len + 1] = '\0';
          path += len;
-         isLast = 0;
+         isLast = 1;
       }
 
       FAT_DirEntry entry;
@@ -387,9 +340,3 @@ FAT_FILE* FAT_OPEN(Partition* disk, const char* path)
    }
    return current;
 }
-
-
-
-
-
-

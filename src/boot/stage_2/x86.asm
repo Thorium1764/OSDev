@@ -1,3 +1,6 @@
+extern puts ; temp 
+extern putn
+
 %macro EnterRealMode 0
    [bits 32]
    jmp word 18h:.pmode16 ; jump to 16 bit protected mode
@@ -140,6 +143,7 @@ x86_Disk_GetDriveParams:
    push ebp
    mov ebp, esp
 
+
    EnterRealMode
 
    [bits 16]
@@ -199,60 +203,31 @@ x86_Disk_GetDriveParams:
    pop ebp
    ret
 
-E820Signature equ 0x534D4150 ; magic numbers
+a1:   dd 0
+a2:   dd 0
+a3:   dd 0
+a4:   dd 0
+a5:   dd 0
 
-global x86_GetNextE820Block
-x86_GetNextE820Block:
-   push ebp
-   mov ebp, esp
+puts16: ; temp
+    ; save registers we will modify
+    push si
+    push ax
+    push bx
 
-   EnterRealMode
+.loop:
+    lodsb               ; loads next character in al
+    or al, al           ; verify if next character is null?
+    jz .done
 
-   push ebx
-   push ecx
-   push edx
-   push esi
-   push edi
-   push ds
-   push es
+    mov ah, 0x0E        ; call bios interrupt
+    mov bh, 0           ; set page number to 0
+    int 0x10
 
-   LinearToSegOffset [bp + 8], es, edi, di ; pointer to struct
-   LinearToSegOffset [bp + 12], ds, esi, si ; pointer to continuation id
-   mov ebx, [ds:si]
-   
-   mov eax, 0E820h
-   mov edx, E820Signature ; magic number
-   mov ecx, 24 ; size of struct
-   
-   int 15h
+    jmp .loop
 
-   cmp eax, E820Signature
-   jne .failure
-
-   .success:
-      mov eax, ecx
-      mov [ds:si], ebx
-      jmp .endif
-
-   .failure:
-      mov eax, -1
-
-   .endif:
-   
-   pop es
-   pop ds 
-   pop edi
-   pop esi
-   pop edx
-   pop ecx
-   pop ebx
-
-   push eax
-
-   EnterProtMode
-
-   pop eax
-
-   mov esp, ebp
-   pop ebp
-   ret
+.done:
+    pop bx
+    pop ax
+    pop si    
+    ret

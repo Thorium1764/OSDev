@@ -5,8 +5,6 @@
 #include "string.h"
 #include "disk.h"
 #include "bin.h"
-#include "memdetect.h"
-#include "mbr.h"
 #include "x86.h"
 #include "fat.h"
 #include "memory.h"
@@ -22,45 +20,43 @@ void __attribute__((cdecl)) start(uint16_t bootDrive)
 {
    clrscr();
 
-   puts("DEBUG: 2");
+   puts("DEBUG: 2\r\n");
 
    Disk disk;
 
-   if(!DiskInit(&disk, bootDrive))
+   /*if(!DiskInit(&disk, bootDrive))
    {
       puts("Disk initialization error\r\n");
       goto error_loop;
-   }
+   }*/
 
-   Partition part;
-   detectPartition(&part, &disk, partition);
+   DiskInit(&disk, bootDrive);
 
-   puts("DEBUG: 3");
+   puts("DEBUG: 3\r\n");
 
-   if (!FAT_INIT(&part)){
+   if (!FAT_INIT(&disk)){
       puts("FAT: initialization error!\r\n");
       goto error_loop;
    }
 
-   puts("DEBUG: 4");
+   puts("DEBUG: 4\r\n");
    
    bootParams.BootDevice = bootDrive;
-   MemDetect(&bootParams.Memory);
-
-   puts("DEBUG: 5");
+   puts("DEBUG: 5\r\n");
    
    KernelStart entryPoint;
 
-   if (!BIN_Read(&part, "/root/kernel.bin", (void**)&entryPoint))
+   if (!BIN_Read(&disk, "/root/kernel.bin", (void**)&entryPoint))
    {
       puts("Kernel read failed, booting halted\r\n");
       goto error_loop;
    }
 
-   puts("DEBUG: 6");
+   puts("DEBUG: 6\r\n");
 
    entryPoint(&bootParams);
 
 error_loop:
+   puts("FATAL ERROR");
    for(;;);
 }

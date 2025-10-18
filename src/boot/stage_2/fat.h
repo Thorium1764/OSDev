@@ -1,6 +1,6 @@
 #pragma once
 #include "stdint.h"
-#include "mbr.h"
+#include "disk.h"
 
 typedef struct
 {
@@ -36,8 +36,8 @@ enum FAT_Attributes
    FAT_ARCHIVE = 0x20
 };
 
-uint8_t FAT_INIT(Partition* disk);
-FAT_FILE* FAT_OPEN(Partition* disk, const char* path);
-uint32_t FAT_READ(Partition* disk, FAT_FILE* file, uint32_t size, void* Data);
-uint8_t FAT_READ_ENTRY(Partition* disk, FAT_FILE* file, FAT_DirEntry* entry);
+uint8_t FAT_INIT(Disk* disk);
+FAT_FILE* FAT_OPEN(Disk* disk, const char* path);
+uint32_t FAT_READ(Disk* disk, FAT_FILE* file, uint32_t size, void* Data);
+uint8_t FAT_READ_ENTRY(Disk* disk, FAT_FILE* file, FAT_DirEntry* entry);
 void FAT_CLOSE(FAT_FILE* file);
