@@ -1,6 +1,7 @@
 #include "stdint.h"
 #include "disk.h"
 #include "x86.h"
+#include "stdio.h"
 
 uint8_t DiskInit(Disk *disk, uint8_t drive_num)
 {
@@ -35,12 +36,15 @@ uint8_t DiskRead(Disk* disk, uint32_t lba, uint8_t sectors, void* Data)
 
    for (int i = 0; i < 3; i++) //retry 3 times
    {
-      if (x86_DiskRead(disk->id, cylinder, sector, head, sectors, Data))
+      if(x86_DiskRead(disk->id, cylinder, sector, head, sectors, Data))
          return 1;
+      
+      putn(i);
+      puts("\r\n");
 
-      x86_DiskReset(disk->id); //unreachable
+      x86_DiskReset(disk->id);
    }
-
+   
    return 0;
 }
 

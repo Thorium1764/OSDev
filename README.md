@@ -5,13 +5,13 @@ A simple OS written in C and Assembly (like every other OS).
 
 ## How to Run:
 ### Linux:
-Run `make.sh` and run it in Qemu or another VM of your choice.
+Run `make` and then `./run.sh`.
 
 ### MacOS:
 Probably the same as on Linux.
 
 ### Windows:
-Absolutely no idea.
+Absolutely no idea. Maybe it works in WSL?
 
 ### Real Hardware:
 What are you doing.

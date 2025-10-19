@@ -185,15 +185,15 @@ FAT_FILE* FAT_OpenEntry(Disk* disk, FAT_DirEntry* entry)
    fd->CurrCluster = fd->FirstCluster;
    fd->CurrSectInCluster = 0;
 
-   if (!DiskRead(disk, FAT_cluster_to_lba(fd->CurrCluster), 1, fd->Buffer)) {
-      puts("FAT: entry open failed - read error: cluster = ");
+   if (!DiskRead(disk, FAT_cluster_to_lba(fd->CurrCluster), 1, fd->Buffer)) { //this return false
+      puts("FAT: opening entry failed - read error: cluster = ");
       putn(fd->CurrCluster);
-      puts(" lba = ");
+      puts("; lba = ");
       putn(FAT_cluster_to_lba(fd->CurrCluster));
-      puts("\r\n");
+      puts("\r\nwhile searching for: \"");
       for (int i = 0; i < 11; i++)
-         putn(entry->Name[i]);
-      puts("\r\n");
+         putc(entry->Name[i]);
+      puts("\"\r\n");
       return 0;
    }
 

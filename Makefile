@@ -16,8 +16,7 @@ $(BUILD_DIR)/main_floppy.img: bootloader kernel
 	@mkfs.fat -F 12 -n "THOS" $@ >/dev/null
 	@dd if=$(BUILD_DIR)/stage1.bin of=$@ conv=notrunc >/dev/null
 	@mcopy -i $@ $(BUILD_DIR)/stage2.bin "::stage2.bin"
-	@mmd -i $@ "::root"
-	@mcopy -i $@ $(BUILD_DIR)/kernel.bin "::/root/kernel.bin"
+	@mcopy -i $@ $(BUILD_DIR)/kernel.bin "::kernel.bin"
 	@echo "--> Created: " $@
 
 #

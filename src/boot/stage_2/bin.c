@@ -6,8 +6,8 @@
 
 uint8_t BIN_Read(Disk *disk, const char *path, void **entryPoint)
 {
-   FAT_FILE* file = FAT_OPEN(disk, path);
-   if (!file){
+   FAT_FILE* file = FAT_OPEN(disk, path); // this is the problem
+   if (!file){ // file is a NULL ptr
       puts("BIN load error: Could not load Kernel\r\n");
       return 0;
    }
