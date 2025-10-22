@@ -10,20 +10,9 @@
 
 #define SECTOR_SIZE 512
 #define ROOT_DIR_HANDLE -1
-#define FAT_CACHE_SIZE 5
-#define MAX_FILE_HANDLES 8
+#define MAX_FILE_HANDLES 10
 #define MAX_PATH_SIZE 256
 
-typedef struct
-{
-   // ebr
-   uint8_t DriveNumber;
-   uint8_t Reserved;
-   uint8_t Signature;
-   uint32_t VolumeID;
-   uint8_t VolumeLabel[11];
-   uint8_t SystemID[8];
-} __attribute__((packed)) FAT_EBR;
 
 /* fat32
 typedef struct
@@ -54,7 +43,14 @@ typedef struct
    uint16_t Heads;
    uint32_t HiddenSectors;
    uint32_t LargeSectorCount;
-   FAT_EBR ebr;
+
+   // ebr
+   uint8_t DriveNumber;
+   uint8_t Reserved;
+   uint8_t Signature;
+   uint32_t VolumeID;
+   uint8_t VolumeLabel[11];
+   uint8_t SystemID[8];
 } __attribute__((packed)) FAT_BootSector;
 
 typedef struct
@@ -83,11 +79,6 @@ static FAT_DATA* Data;
 static uint32_t DataSectionLba;
 static uint8_t* Fat = NULL;
 
-
-uint32_t FAT_cluster_to_lba(uint32_t cluster)
-{
-   return DataSectionLba + (cluster - 2) * Data->Boot_Sector.BootSector.SectorsPerCluster;
-}
 
 uint8_t FAT_ReadBS(Disk* disk)
 {
@@ -135,7 +126,7 @@ uint8_t FAT_INIT(Disk* disk)
    Data->RootDir.Public.isDir = 1;
    Data->RootDir.Public.Pos = 0;
    Data->RootDir.Public.Size = sizeof(FAT_DirEntry) * Data->Boot_Sector.BootSector.DirEntryCount;
-   Data->RootDir.Opened = 0;
+   Data->RootDir.Opened = 1;
    Data->RootDir.FirstCluster = root_dir_lba;
    Data->RootDir.CurrCluster = root_dir_lba;
    Data->RootDir.CurrSectInCluster = 0;
@@ -145,6 +136,7 @@ uint8_t FAT_INIT(Disk* disk)
       return 0;
    }
 
+
    uint32_t root_dir_sectors = (root_dir_size + Data->Boot_Sector.BootSector.BytesPerSector - 1) / Data->Boot_Sector.BootSector.BytesPerSector;
    DataSectionLba = root_dir_lba + root_dir_sectors;
 
@@ -152,6 +144,11 @@ uint8_t FAT_INIT(Disk* disk)
       Data->OpenedFiles[i].Opened = 0;
 
    return 1;
+}
+
+uint32_t FAT_cluster_to_lba(uint32_t cluster)
+{
+   return DataSectionLba + (cluster - 2) * Data->Boot_Sector.BootSector.SectorsPerCluster;
 }
 
 void FAT_CLOSE(FAT_FILE *file){
@@ -181,16 +178,17 @@ FAT_FILE* FAT_OpenEntry(Disk* disk, FAT_DirEntry* entry)
    fd->Public.isDir = (entry->Attributes & FAT_DIR) != 0;
    fd->Public.Pos = 0;
    fd->Public.Size = entry->Size;
-   fd->FirstCluster = entry->FirstClusterLow + ((uint32_t)entry->FirstClusterHigh << 16);
+   fd->FirstCluster = entry->FirstClusterHigh & 0xFFF; //so it was that easy
    fd->CurrCluster = fd->FirstCluster;
    fd->CurrSectInCluster = 0;
 
-   if (!DiskRead(disk, FAT_cluster_to_lba(fd->CurrCluster), 1, fd->Buffer)) { //this return false
+   if (!DiskRead(disk, FAT_cluster_to_lba(fd->CurrCluster), 1, fd->Buffer)) {
       puts("FAT: opening entry failed - read error: cluster = ");
       putn(fd->CurrCluster);
       puts("; lba = ");
       putn(FAT_cluster_to_lba(fd->CurrCluster));
-      puts("\r\nwhile searching for: \"");
+      puts("; entry = ");
+      puts("\r\nwhile opening: \"");
       for (int i = 0; i < 11; i++)
          putc(entry->Name[i]);
       puts("\"\r\n");
@@ -289,6 +287,9 @@ uint8_t FAT_FIND_FILE(Disk* disk, FAT_FILE* file, const char* name, FAT_DirEntry
    while (FAT_READ_ENTRY(disk, file, &entry)){
       if (memcmp(shortName, entry.Name, 11) == 0){
          *entry_out = entry;
+         puts("FAT: located ");
+         puts(name);
+         puts("\r\n");
          return 1;
       }
    }

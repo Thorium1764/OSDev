@@ -35,8 +35,6 @@ void __attribute__((cdecl)) start(uint16_t bootDrive)
 
    bootParams.BootDevice = bootDrive;
 
-   puts("DEBUG: 5\r\n");
-   
    KernelStart entryPoint;
 
    if (!BIN_Read(&disk, "/kernel.bin", (void**)&entryPoint))
@@ -44,12 +42,12 @@ void __attribute__((cdecl)) start(uint16_t bootDrive)
       puts("Kernel read failed, booting halted\r\n");
       goto error_loop;
    }
-
-   puts("DEBUG: 6\r\n");
+   
+   puts("DEBUG\r\n");
 
    entryPoint(&bootParams);
 
 error_loop:
-   puts("FATAL ERROR");
+   puts("FATAL ERROR WHILE BOOTING\r\n");
    for(;;);
 }
