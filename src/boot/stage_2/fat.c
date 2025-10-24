@@ -287,9 +287,6 @@ uint8_t FAT_FIND_FILE(Disk* disk, FAT_FILE* file, const char* name, FAT_DirEntry
    while (FAT_READ_ENTRY(disk, file, &entry)){
       if (memcmp(shortName, entry.Name, 11) == 0){
          *entry_out = entry;
-         puts("FAT: located ");
-         puts(name);
-         puts("\r\n");
          return 1;
       }
    }

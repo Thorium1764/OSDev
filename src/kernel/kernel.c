@@ -9,6 +9,6 @@ void __attribute__((cdecl, noreturn, section(".entry"))) start(BootParams* bootp
 {  
    memset(&__bss_start, 0, (&__end) - (&__bss_start));
 
-   puts("Im in\r\n");
+   puts("Hello World from the Kernel!\r\n");
    for (;;);
 }

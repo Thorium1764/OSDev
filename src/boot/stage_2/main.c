@@ -37,13 +37,12 @@ void __attribute__((cdecl)) start(uint16_t bootDrive)
 
    KernelStart entryPoint;
 
+
    if (!BIN_Read(&disk, "/kernel.bin", (void**)&entryPoint))
    {
       puts("Kernel read failed, booting halted\r\n");
       goto error_loop;
    }
-   
-   puts("DEBUG\r\n");
 
    entryPoint(&bootParams);
 

@@ -66,26 +66,27 @@ LOAD /usr/lib/gcc/i686-elf/11.2.0/libgcc.a
                 0x001006a8                ScreenBuffer
  .data          0x001006ac        0x0 /home/tobias/code/OSDev/build/kernel/c/arch/i686/isrs_gen.obj
 
-.rodata         0x001006ac       0x11
+.rodata         0x001006ac       0x29
                 0x001006ac                        __rodata_start = .
  *(.rodata)
- .rodata        0x001006ac        0x8 /home/tobias/code/OSDev/build/kernel/c/kernel.obj
- .rodata        0x001006b4        0x9 /home/tobias/code/OSDev/build/kernel/c/stdio.obj
-                0x001006b4                SCREEN_WIDTH
-                0x001006b8                SCREEN_HEIGHT
-                0x001006bc                DEFAULT_COLOR
+ .rodata        0x001006ac       0x1f /home/tobias/code/OSDev/build/kernel/c/kernel.obj
+ *fill*         0x001006cb        0x1 
+ .rodata        0x001006cc        0x9 /home/tobias/code/OSDev/build/kernel/c/stdio.obj
+                0x001006cc                SCREEN_WIDTH
+                0x001006d0                SCREEN_HEIGHT
+                0x001006d4                DEFAULT_COLOR
 
-.bss            0x001006c0        0x8
-                0x001006c0                        __bss_start = .
+.bss            0x001006d8        0x8
+                0x001006d8                        __bss_start = .
  *(.bss)
- .bss           0x001006c0        0x0 /home/tobias/code/OSDev/build/kernel/c/io.obj
- .bss           0x001006c0        0x0 /home/tobias/code/OSDev/build/kernel/c/kernel.obj
- .bss           0x001006c0        0x0 /home/tobias/code/OSDev/build/kernel/c/memory.obj
- .bss           0x001006c0        0x8 /home/tobias/code/OSDev/build/kernel/c/stdio.obj
-                0x001006c0                ScreenX
-                0x001006c4                ScreenY
- .bss           0x001006c8        0x0 /home/tobias/code/OSDev/build/kernel/c/arch/i686/isrs_gen.obj
-                0x001006c8                        __end = .
+ .bss           0x001006d8        0x0 /home/tobias/code/OSDev/build/kernel/c/io.obj
+ .bss           0x001006d8        0x0 /home/tobias/code/OSDev/build/kernel/c/kernel.obj
+ .bss           0x001006d8        0x0 /home/tobias/code/OSDev/build/kernel/c/memory.obj
+ .bss           0x001006d8        0x8 /home/tobias/code/OSDev/build/kernel/c/stdio.obj
+                0x001006d8                ScreenX
+                0x001006dc                ScreenY
+ .bss           0x001006e0        0x0 /home/tobias/code/OSDev/build/kernel/c/arch/i686/isrs_gen.obj
+                0x001006e0                        __end = .
 OUTPUT(/home/tobias/code/OSDev/build/kernel.bin binary)
 
 .debug_info     0x00000000      0x8ad
