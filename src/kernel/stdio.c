@@ -47,10 +47,10 @@ void setcursor(int x, int y)
 {
    int position = y * SCREEN_WIDTH + x;
    
-    i686_out(0x3D4, 0x0F);
-    i686_out(0x3D5, (uint8_t)(position & 0xFF));
-    i686_out(0x3D4, 0x0E);
-    i686_out(0x3D5, (uint8_t)((position >> 8) & 0xFF));
+    i686_outb(0x3D4, 0x0F);
+    i686_outb(0x3D5, (uint8_t)(position & 0xFF));
+    i686_outb(0x3D4, 0x0E);
+    i686_outb(0x3D5, (uint8_t)((position >> 8) & 0xFF));
 }
 
 void scrollback(int lines)
@@ -74,7 +74,7 @@ void scrollback(int lines)
 
 void putc(char c)
 {
-    i686_out(0xE9, c);
+    i686_outb(0xE9, c);
     switch (c)
     {
         case '\n':

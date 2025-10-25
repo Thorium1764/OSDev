@@ -14,7 +14,7 @@ uint8_t* Kernel = (uint8_t*)MEMORY_KERNEL_ADDR;
 
 BootParams bootParams;
 
-typedef void (*KernelStart)(BootParams* bootpara); //the pointer is now interpreted as a function and the cpu will jmp to the address
+typedef void (*KernelStart)(BootParams* bootpara, Disk* disk); //the pointer is now interpreted as a function and the cpu will jmp to the address
 
 void __attribute__((cdecl)) start(uint16_t bootDrive)
 {
@@ -44,7 +44,7 @@ void __attribute__((cdecl)) start(uint16_t bootDrive)
       goto error_loop;
    }
 
-   entryPoint(&bootParams);
+   entryPoint(&bootParams, &disk);
 
 error_loop:
    puts("FATAL ERROR WHILE BOOTING\r\n");
